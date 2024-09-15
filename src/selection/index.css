@@ -1,0 +1,26 @@
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  cursor: crosshair;
+}
+#selection-area {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.3);
+}
+#selection-box {
+  position: absolute;
+  border: 2px solid #00ff00;
+  display: none;
+}
+#selection-action {
+  position: absolute;
+  display: none;
+}

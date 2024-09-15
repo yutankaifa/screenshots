@@ -2,10 +2,9 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main"],
+  "windows": ["main","selection"],
   "permissions": [
     "core:event:default",
-    "core:window:default",
     "core:app:default",
     "core:webview:allow-create-webview-window",
     "core:window:allow-show",

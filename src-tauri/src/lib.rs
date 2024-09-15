@@ -1,6 +1,6 @@
 use screenshots::Screen;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tauri::{Manager,path};
+use tauri::{Manager};
 use std::fs::{create_dir};
 use std::path::Path;
 

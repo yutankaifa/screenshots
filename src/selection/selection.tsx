@@ -14,12 +14,6 @@ export default function SelectionApp() {
   const selectionBoxRef = useRef<HTMLDivElement>(null);
   const selectionActionRef = useRef<HTMLDivElement>(null);
 
-  const init = () => {
-    setStartPos({ x: 0, y: 0 });
-    setEndPos({ x: 0, y: 0 });
-    if (selectionAreaRef.current)
-      selectionAreaRef.current.style.display = "none";
-  };
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
       setIsSelecting(true);
@@ -99,8 +93,8 @@ export default function SelectionApp() {
         width: Math.round(width * ratio),
         height: Math.round(height * ratio),
       });
-      init();
       const webView = getCurrentWebviewWindow();
+      console.log("webView", webView);
       await webView.hide();
     } catch (error) {
       console.error("Screenshot failed:", error);

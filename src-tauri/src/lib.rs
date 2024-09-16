@@ -1,6 +1,7 @@
 use screenshots::Screen;
 use tauri::Manager;
-
+#[cfg(desktop)]
+mod tray;
 #[tauri::command]
 fn is_created_selection(app: tauri::AppHandle) -> bool {
     app.get_webview_window("selection").is_some()
@@ -36,6 +37,21 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_dialog::init())
+        .setup(|app| {
+            #[cfg(all(desktop))]
+            {
+                let handle = app.handle();
+                tray::create_tray(handle)?;
+            }
+            Ok(())
+        })
+        .on_window_event(|window,event| match event  {
+            tauri::WindowEvent::CloseRequested { api, .. } => {
+                window.hide().unwrap();
+                api.prevent_close();
+            }
+            _ => {}
+        })
         .invoke_handler(tauri::generate_handler![
             take_screenshot,
             is_created_selection

@@ -89,18 +89,20 @@ export default function SelectionApp() {
     const x = Math.round(left * ratio);
     const y = Math.round(top * ratio);
 
-    try {
-      await invoke("take_screenshot", {
-        x,
-        y,
-        width: Math.round(width * ratio),
-        height: Math.round(height * ratio),
-      });
-      const webView = getCurrentWebviewWindow();
-      await webView.close();
-    } catch (error) {
-      console.error("Screenshot failed:", error);
-    }
+    setTimeout(async () => {
+      try {
+        await invoke("take_screenshot", {
+          x,
+          y,
+          width: Math.round(width * ratio),
+          height: Math.round(height * ratio),
+        });
+        const webView = getCurrentWebviewWindow();
+        await webView.close();
+      } catch (error) {
+        console.error("Screenshot failed:", error);
+      }
+    });
   };
 
   return (

@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { invoke } from "@tauri-apps/api/core";
 import "./index.css";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { save } from "@tauri-apps/plugin-dialog";
 
 const ratio = window.devicePixelRatio;
 
@@ -10,6 +11,7 @@ export default function SelectionApp() {
   const [isSelecting, setIsSelecting] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [endPos, setEndPos] = useState({ x: 0, y: 0 });
+  const selectionConRef = useRef<HTMLDivElement>(null);
   const selectionAreaRef = useRef<HTMLDivElement>(null);
   const selectionBoxRef = useRef<HTMLDivElement>(null);
   const selectionActionRef = useRef<HTMLDivElement>(null);
@@ -82,13 +84,21 @@ export default function SelectionApp() {
   const handleSave = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (selectionBoxRef.current) {
-      selectionBoxRef.current.style.border = "0";
+    if (selectionConRef.current) {
+      selectionConRef.current.style.display = "none";
     }
     const { left, top, width, height } = getSpace();
     const x = Math.round(left * ratio);
     const y = Math.round(top * ratio);
 
+    const filePath = await save({
+      filters: [
+        {
+          name: "Image",
+          extensions: ["png"],
+        },
+      ],
+    });
     setTimeout(async () => {
       try {
         await invoke("take_screenshot", {
@@ -96,17 +106,18 @@ export default function SelectionApp() {
           y,
           width: Math.round(width * ratio),
           height: Math.round(height * ratio),
+          filePath,
         });
         const webView = getCurrentWebviewWindow();
         await webView.close();
       } catch (error) {
         console.error("Screenshot failed:", error);
       }
-    });
+    }, 100);
   };
 
   return (
-    <div>
+    <div id="selection-container" ref={selectionConRef}>
       <div id="selection-area" ref={selectionAreaRef}></div>
       <div style={{ color: "#fff" }}>
         <div style={{ display: "flex", gap: "5px" }}>

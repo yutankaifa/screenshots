@@ -82,9 +82,12 @@ export default function SelectionApp() {
   const handleSave = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    if (selectionBoxRef.current) {
+      selectionBoxRef.current.style.border = "0";
+    }
     const { left, top, width, height } = getSpace();
-    const x = Math.round((left + 2) * ratio);
-    const y = Math.round((top + 2) * ratio);
+    const x = Math.round(left * ratio);
+    const y = Math.round(top * ratio);
 
     try {
       await invoke("take_screenshot", {
@@ -94,8 +97,7 @@ export default function SelectionApp() {
         height: Math.round(height * ratio),
       });
       const webView = getCurrentWebviewWindow();
-      console.log("webView", webView);
-      await webView.hide();
+      await webView.close();
     } catch (error) {
       console.error("Screenshot failed:", error);
     }

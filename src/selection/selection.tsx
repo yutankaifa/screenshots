@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { invoke } from "@tauri-apps/api/core";
-import "./index.css";
+import "./selection.css";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { save } from "@tauri-apps/plugin-dialog";
 
@@ -84,13 +84,6 @@ export default function SelectionApp() {
   const handleSave = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (selectionConRef.current) {
-      selectionConRef.current.style.display = "none";
-    }
-    const { left, top, width, height } = getSpace();
-    const x = Math.round(left * ratio);
-    const y = Math.round(top * ratio);
-
     const filePath = await save({
       filters: [
         {
@@ -99,21 +92,29 @@ export default function SelectionApp() {
         },
       ],
     });
-    setTimeout(async () => {
-      try {
-        await invoke("take_screenshot", {
-          x,
-          y,
-          width: Math.round(width * ratio),
-          height: Math.round(height * ratio),
-          filePath,
-        });
-        const webView = getCurrentWebviewWindow();
-        await webView.close();
-      } catch (error) {
-        console.error("Screenshot failed:", error);
+    if (filePath) {
+      if (selectionConRef.current) {
+        selectionConRef.current.style.display = "none";
       }
-    }, 100);
+      const { left, top, width, height } = getSpace();
+      const x = Math.round(left * ratio);
+      const y = Math.round(top * ratio);
+      setTimeout(async () => {
+        try {
+          await invoke("take_screenshot", {
+            x,
+            y,
+            width: Math.round(width * ratio),
+            height: Math.round(height * ratio),
+            filePath,
+          });
+          const webView = getCurrentWebviewWindow();
+          await webView.close();
+        } catch (error) {
+          console.error("Screenshot failed:", error);
+        }
+      }, 100);
+    }
   };
 
   return (

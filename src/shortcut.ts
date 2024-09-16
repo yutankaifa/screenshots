@@ -4,7 +4,7 @@ import {
   unregister,
   unregisterAll,
 } from "@tauri-apps/plugin-global-shortcut";
-import { shortcuts } from "../common/data";
+import { shortcuts } from "./common/data.ts";
 import {
   getAllWebviewWindows,
   WebviewWindow,
@@ -18,7 +18,8 @@ export const registerShortcut = async (shortcut: string) => {
       await register(shortcut, async () => {
         if (shortcut == shortcuts[0].name) {
           let selectionWindow = new WebviewWindow("selection", {
-            url: "src/selection/index.html",
+            // url: "src/selection/selection.html",
+            url: "../selection.html",
             decorations: false,
             fullscreen: true,
             resizable: false,
@@ -27,6 +28,7 @@ export const registerShortcut = async (shortcut: string) => {
             visible: true,
             shadow: false,
             theme: "dark",
+            skipTaskbar: true,
           });
           await selectionWindow.once("tauri://created", () => {
             console.log("The selection window has been created");

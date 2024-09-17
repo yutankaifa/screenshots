@@ -7,8 +7,8 @@ import { save } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 
 const ratio = window.devicePixelRatio;
-const magnifierSize = 100; // 放大镜大小
-const zoomFactor = 1.2; // 放大倍数
+const magnifierSize = 100; // Magnifying glass size
+const zoomFactor = 1.2; // magnification
 export default function SelectionApp() {
   const [isSelecting, setIsSelecting] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
@@ -25,35 +25,38 @@ export default function SelectionApp() {
     init();
   }, []);
   const fetchImage = async () => {
-    const base64: string = await invoke("take_screenshot");
     // Load image from file path
-    imageRef.current.src = base64;
-    console.log("base64", base64);
+    imageRef.current.src = await invoke("take_screenshot");
   };
   useEffect(() => {
-    const handleMouseMove = async (e: MouseEvent) => {
-      // 更新放大镜位置和内容
+    const handleMouseMove = (e: MouseEvent) => {
       const magnifierCanvas = magnifierRef.current;
-      if (magnifierCanvas) {
+      if (magnifierCanvas && imageRef.current.complete) {
         const ctx = magnifierCanvas.getContext("2d");
         if (ctx) {
-          // 清除放大镜内容
           ctx.clearRect(0, 0, magnifierSize, magnifierSize);
-          // 绘制屏幕快照到放大镜
+          // Calculate the actual mouse position (considering device pixel ratio)
+          const mouseX = e.clientX * ratio;
+          const mouseY = e.clientY * ratio;
+          // Calculate the capture area of the source image
+          const sourceX = mouseX - magnifierSize / zoomFactor / 2;
+          const sourceY = mouseY - magnifierSize / zoomFactor / 2;
+          const sourceWidth = magnifierSize / zoomFactor;
+          const sourceHeight = magnifierSize / zoomFactor;
+          // Draw a screenshot to the magnifying glass
           ctx.drawImage(
-            imageRef.current, // 使用 html2canvas 捕捉到的屏幕图像
-            e.clientX - magnifierSize / (2 * zoomFactor), // 捕捉的起点 x
-            e.clientY - magnifierSize / (2 * zoomFactor), // 捕捉的起点 y
-            magnifierSize / zoomFactor, // 捕捉区域的宽度
-            magnifierSize / zoomFactor, // 捕捉区域的高度
-            0, // 绘制起点 x
-            0, // 绘制起点 y
-            magnifierSize, // 绘制区域宽度
-            magnifierSize, // 绘制区域高度
+            imageRef.current,
+            sourceX,
+            sourceY,
+            sourceWidth,
+            sourceHeight,
+            0,
+            0,
+            magnifierSize,
+            magnifierSize,
           );
-
-          // 设置放大镜的位置
-          magnifierCanvas.style.left = `${e.clientX + 20}px`; // 放大镜靠近鼠标右侧
+          // Set the position of the magnifying glass
+          magnifierCanvas.style.left = `${e.clientX + 20}px`;
           magnifierCanvas.style.top = `${e.clientY + 20}px`;
         }
       }
@@ -161,7 +164,7 @@ export default function SelectionApp() {
         } catch (error) {
           console.error("Screenshot failed:", error);
         }
-      }, 50);
+      }, 100);
     }
   };
 

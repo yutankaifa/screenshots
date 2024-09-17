@@ -20,7 +20,7 @@ fn take_screenshot(
 ) -> Result<String, String> {
  
     let screens = Screen::all().map_err(|e| e.to_string())?;
-    let screen = screens.get(0).ok_or("没有找到屏幕")?;
+    let screen = screens.get(0).ok_or("Screen not found")?;
     let x = x.unwrap_or(0);
     let y = y.unwrap_or(0);
     let width = width.unwrap_or(screen.display_info.width);
@@ -35,7 +35,7 @@ fn take_screenshot(
             .map_err(|e| e.to_string())?;
         if let Some(path) = file_path {
             image.save(&path).map_err(|e| e.to_string())?;
-            Ok(format!("截图已保存到: {}", path))
+            Ok(format!("The screenshot has been saved to: {}", path))
         } else {
             let mut buffer = Cursor::new(Vec::new());
             image.write_to(&mut buffer, ImageOutputFormat::Png)

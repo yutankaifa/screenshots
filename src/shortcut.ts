@@ -37,32 +37,12 @@ export const registerShortcut = async (shortcut: string) => {
       });
     }
     const res = await isRegistered(shortcut);
-    console.log("shortcut", res, shortcut);
     if (!res) {
       await register(shortcut, async () => {
         if (shortcut == shortcuts[0].name) {
-          // let selectionWindow = new WebviewWindow("selection", {
-          //   url: "../selection.html",
-          //   decorations: false,
-          //   fullscreen: true,
-          //   resizable: false,
-          //   transparent: true,
-          //   alwaysOnTop: true,
-          //   visible: true,
-          //   shadow: false,
-          //   theme: "dark",
-          //   skipTaskbar: true,
-          // });
-          // await selectionWindow.once("tauri://created", () => {
-          //   console.log("The selection window has been created");
-          // });
-          // await selectionWindow.once("tauri://error", (e) => {
-          //   console.error("Error creating selection window:", e);
-          // });
           await selectionWindow.show();
           await emit("reload-selection");
         } else if (shortcut == shortcuts[1].name) {
-          // await selectionWindow.close();
           const all = await getAllWebviewWindows();
           const selectionWindow = all.find((item) => item.label == "selection");
           if (selectionWindow) await selectionWindow.close();

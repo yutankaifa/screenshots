@@ -1,5 +1,8 @@
-use screenshots::Screen;
+use screenshots::{Screen,image::ImageOutputFormat};
 use tauri::Manager;
+use base64::{engine::general_purpose, Engine as _};
+use std::io::Cursor;
+
 #[cfg(desktop)]
 mod tray;
 #[tauri::command]
@@ -9,23 +12,37 @@ fn is_created_selection(app: tauri::AppHandle) -> bool {
 
 #[tauri::command]
 fn take_screenshot(
-    x: i32,
-    y: i32,
-    width: u32,
-    height: u32,
-    file_path: String,
+    x: Option<i32>,
+    y: Option<i32>,
+    width: Option<u32>,
+    height: Option<u32>,
+    file_path: Option<String>,
 ) -> Result<String, String> {
+ 
+    let screens = Screen::all().map_err(|e| e.to_string())?;
+    let screen = screens.get(0).ok_or("没有找到屏幕")?;
+    let x = x.unwrap_or(0);
+    let y = y.unwrap_or(0);
+    let width = width.unwrap_or(screen.display_info.width);
+    let height = height.unwrap_or(screen.display_info.height);
     println!(
         "take_screenshot called with x: {}, y: {}, width: {}, height: {}",
         x, y, width, height
     );
-    let screens = Screen::all().map_err(|e| e.to_string())?;
     if let Some(screen) = screens.get(0) {
         let image = screen
             .capture_area(x, y, width, height)
             .map_err(|e| e.to_string())?;
-        image.save(file_path).unwrap();
-        Ok("Screenshot successful".into())
+        if let Some(path) = file_path {
+            image.save(&path).map_err(|e| e.to_string())?;
+            Ok(format!("截图已保存到: {}", path))
+        } else {
+            let mut buffer = Cursor::new(Vec::new());
+            image.write_to(&mut buffer, ImageOutputFormat::Png)
+                .map_err(|e| e.to_string())?;
+            let base64_image = general_purpose::STANDARD.encode(buffer.into_inner());
+            Ok(format!("data:image/png;base64,{}", base64_image))
+        }
     } else {
         Err("Screen not found".into())
     }

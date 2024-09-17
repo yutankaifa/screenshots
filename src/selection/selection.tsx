@@ -6,38 +6,69 @@ import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { save } from "@tauri-apps/plugin-dialog";
 
 const ratio = window.devicePixelRatio;
-
+const magnifierSize = 150; // 放大镜大小
+const zoomFactor = 2; // 放大倍数
 export default function SelectionApp() {
   const [isSelecting, setIsSelecting] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [endPos, setEndPos] = useState({ x: 0, y: 0 });
   const selectionConRef = useRef<HTMLDivElement>(null);
-  // const selectionAreaRef = useRef<HTMLDivElement>(null);
   const selectionBoxRef = useRef<HTMLDivElement>(null);
   const selectionActionRef = useRef<HTMLDivElement>(null);
+  const magnifierRef = useRef<HTMLCanvasElement>(null); // 放大镜的 canvas
 
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
       setIsSelecting(true);
       setStartPos({ x: e.clientX, y: e.clientY });
       setEndPos({ x: e.clientX, y: e.clientY });
+      if (selectionBoxRef.current) {
+        selectionBoxRef.current.style.boxShadow =
+          "0 0 0 9999px rgba(0, 0, 0, 0.3)";
+      }
     };
 
     const handleMouseMove = (e: MouseEvent) => {
       if (isSelecting) {
         setEndPos({ x: e.clientX, y: e.clientY });
+        // 更新放大镜位置和内容
+        const magnifierCanvas = magnifierRef.current;
+        if (magnifierCanvas) {
+          const ctx = magnifierCanvas.getContext("2d");
+          if (ctx) {
+            console.log("ctx", ctx);
+            // 清除放大镜内容
+            ctx.clearRect(0, 0, magnifierSize, magnifierSize);
+
+            // 绘制屏幕图像到放大镜
+            ctx.drawImage(
+              document.documentElement as any, // 捕获整个页面
+              e.clientX - magnifierSize / (2 * zoomFactor), // 捕获的起点 x
+              e.clientY - magnifierSize / (2 * zoomFactor), // 捕获的起点 y
+              magnifierSize / zoomFactor, // 捕获区域的宽度
+              magnifierSize / zoomFactor, // 捕获区域的高度
+              0, // 绘制起点 x
+              0, // 绘制起点 y
+              magnifierSize, // 绘制区域宽度
+              magnifierSize, // 绘制区域高度
+            );
+
+            // 设置放大镜的位置
+            magnifierCanvas.style.left = `${e.clientX + 20}px`; // 放大镜靠近鼠标右侧
+            magnifierCanvas.style.top = `${e.clientY + 20}px`;
+          }
+        }
       }
     };
     const handleMouseUp = (_e: MouseEvent) => {
       if (isSelecting) {
         setIsSelecting(false);
-        console.log("Selection ended"); // 用于调试
-        // 在这里处理选择完成后的逻辑
         if (selectionActionRef.current) {
           selectionActionRef.current.style.display = "block";
         }
       }
     };
+
     const removeAllEventListener = () => {
       window.removeEventListener("mousedown", handleMouseDown);
       window.removeEventListener("mousemove", handleMouseMove);
@@ -52,6 +83,7 @@ export default function SelectionApp() {
       removeAllEventListener();
     };
   }, [isSelecting]);
+
   const getSpace = useMemo(() => {
     const left = Math.min(startPos.x, endPos.x);
     const top = Math.min(startPos.y, endPos.y);
@@ -137,6 +169,21 @@ export default function SelectionApp() {
           Save
         </button>
       </div>
+
+      {/* 放大镜 canvas */}
+      <canvas
+        ref={magnifierRef}
+        width={magnifierSize}
+        height={magnifierSize}
+        style={{
+          position: "absolute",
+          pointerEvents: "none",
+          borderRadius: "50%",
+          boxShadow: "0 0 10px rgba(0, 0, 0, 0.5)",
+          border: "2px solid #fff",
+          zIndex: 9999,
+        }}
+      />
     </div>
   );
 }

@@ -16,7 +16,7 @@ export const registerShortcut = async (shortcut: string) => {
       selectionWindow = new WebviewWindow("selection", {
         url: "../selection.html",
         decorations: false,
-        fullscreen: true,
+        fullscreen: false,
         resizable: false,
         transparent: true,
         alwaysOnTop: true,

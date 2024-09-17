@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { invoke } from "@tauri-apps/api/core";
 import "./selection.css";
@@ -12,7 +12,7 @@ export default function SelectionApp() {
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [endPos, setEndPos] = useState({ x: 0, y: 0 });
   const selectionConRef = useRef<HTMLDivElement>(null);
-  const selectionAreaRef = useRef<HTMLDivElement>(null);
+  // const selectionAreaRef = useRef<HTMLDivElement>(null);
   const selectionBoxRef = useRef<HTMLDivElement>(null);
   const selectionActionRef = useRef<HTMLDivElement>(null);
 
@@ -26,12 +26,6 @@ export default function SelectionApp() {
     const handleMouseMove = (e: MouseEvent) => {
       if (isSelecting) {
         setEndPos({ x: e.clientX, y: e.clientY });
-        if (selectionAreaRef.current) {
-          const { left, top, width, height } = getSpace();
-          selectionAreaRef.current.style.clipPath = `inset(${top}px ${
-            window.innerWidth - (left + width)
-          }px ${window.innerHeight - (top + height)}px ${left}px)`;
-        }
       }
     };
     const handleMouseUp = (_e: MouseEvent) => {
@@ -58,16 +52,17 @@ export default function SelectionApp() {
       removeAllEventListener();
     };
   }, [isSelecting]);
-  const getSpace = () => {
+  const getSpace = useMemo(() => {
     const left = Math.min(startPos.x, endPos.x);
     const top = Math.min(startPos.y, endPos.y);
     const width = Math.abs(endPos.x - startPos.x);
     const height = Math.abs(endPos.y - startPos.y);
     return { left, top, width, height };
-  };
+  }, [startPos, endPos]);
+
   useEffect(() => {
     const selectionBox = selectionBoxRef.current;
-    const { left, top, width, height } = getSpace();
+    const { left, top, width, height } = getSpace;
     if (selectionBox) {
       selectionBox.style.left = `${left}px`;
       selectionBox.style.top = `${top}px`;
@@ -96,7 +91,7 @@ export default function SelectionApp() {
       if (selectionConRef.current) {
         selectionConRef.current.style.display = "none";
       }
-      const { left, top, width, height } = getSpace();
+      const { left, top, width, height } = getSpace;
       const x = Math.round(left * ratio);
       const y = Math.round(top * ratio);
       setTimeout(async () => {
@@ -119,7 +114,7 @@ export default function SelectionApp() {
 
   return (
     <div id="selection-container" ref={selectionConRef}>
-      <div id="selection-area" ref={selectionAreaRef}></div>
+      <div id="selection-overlay"></div>
       <div style={{ color: "#fff" }}>
         <div style={{ display: "flex", gap: "5px" }}>
           <p>start</p>

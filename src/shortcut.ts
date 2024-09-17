@@ -39,11 +39,6 @@ export const registerShortcut = async (shortcut: string) => {
         if (shortcut == shortcuts[0].name) {
           await selectionWindow.show();
         } else if (shortcut == shortcuts[1].name) {
-          // const webViews = await getAllWebviewWindows();
-          // const selectionWindow = webViews.find(
-          //   (item) => item.label == "selection",
-          // );
-          // if (selectionWindow) await selectionWindow.close();
           await selectionWindow.close();
         }
       });

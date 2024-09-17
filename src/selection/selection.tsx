@@ -7,8 +7,9 @@ import { save } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 
 const ratio = window.devicePixelRatio;
+const originSize = 50; // Original image size
 const magnifierSize = 100; // Magnifying glass size
-const zoomFactor = 1.2; // magnification
+const zoomFactor = 2; // magnification
 export default function SelectionApp() {
   const [isSelecting, setIsSelecting] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
@@ -16,7 +17,8 @@ export default function SelectionApp() {
   const selectionConRef = useRef<HTMLDivElement>(null);
   const selectionBoxRef = useRef<HTMLDivElement>(null);
   const selectionActionRef = useRef<HTMLDivElement>(null);
-  const magnifierRef = useRef<HTMLCanvasElement>(null); // 放大镜的 canvas
+  const magnifierConRef = useRef<HTMLDivElement>(null);
+  const magnifierRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(new Image());
   useEffect(() => {
     const init = async () => {
@@ -39,10 +41,10 @@ export default function SelectionApp() {
           const mouseX = e.clientX * ratio;
           const mouseY = e.clientY * ratio;
           // Calculate the capture area of the source image
-          const sourceX = mouseX - magnifierSize / zoomFactor / 2;
-          const sourceY = mouseY - magnifierSize / zoomFactor / 2;
-          const sourceWidth = magnifierSize / zoomFactor;
-          const sourceHeight = magnifierSize / zoomFactor;
+          const sourceX = mouseX - originSize / zoomFactor / 2;
+          const sourceY = mouseY - originSize / zoomFactor / 2;
+          const sourceWidth = originSize / zoomFactor;
+          const sourceHeight = originSize / zoomFactor;
           // Draw a screenshot to the magnifying glass
           ctx.drawImage(
             imageRef.current,
@@ -55,10 +57,11 @@ export default function SelectionApp() {
             magnifierSize,
             magnifierSize,
           );
-          // Set the position of the magnifying glass
-          magnifierCanvas.style.left = `${e.clientX + 20}px`;
-          magnifierCanvas.style.top = `${e.clientY + 20}px`;
         }
+      }
+      if (magnifierConRef.current) {
+        magnifierConRef.current.style.left = `${e.clientX + 20}px`;
+        magnifierConRef.current.style.top = `${e.clientY + 20}px`;
       }
     };
 
@@ -164,14 +167,13 @@ export default function SelectionApp() {
         } catch (error) {
           console.error("Screenshot failed:", error);
         }
-      }, 100);
+      }, 200);
     }
   };
 
   return (
     <div id="selection-container" ref={selectionConRef}>
       <div id="selection-overlay"></div>
-
       <div style={{ color: "#fff" }}>
         <div style={{ display: "flex", gap: "5px" }}>
           <p>start</p>
@@ -194,20 +196,20 @@ export default function SelectionApp() {
           Save
         </button>
       </div>
-
-      {/* 放大镜 canvas */}
-      <canvas
-        ref={magnifierRef}
-        width={magnifierSize}
-        height={magnifierSize}
-        style={{
-          position: "absolute",
-          pointerEvents: "none",
-          boxShadow: "0 0 10px rgba(0, 0, 0, 0.5)",
-          border: "2px solid #fff",
-          zIndex: 9999,
-        }}
-      />
+      <div id="magnifier-container" ref={magnifierConRef}>
+        <div style={{ position: "relative" }}>
+          <canvas
+            ref={magnifierRef}
+            width={magnifierSize}
+            height={magnifierSize}
+            style={{
+              border: "2px solid #fff",
+            }}
+          />
+          <div id="magnifier-line-x"></div>
+          <div id="magnifier-line-y"></div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -218,5 +220,4 @@ const root = createRoot(container);
 
 listen("reload-selection", () => {
   root.render(<SelectionApp key={1000 * Math.random()} />);
-  // 重置状态
 });

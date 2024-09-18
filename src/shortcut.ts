@@ -29,7 +29,7 @@ export const registerShortcut = async (shortcut: string) => {
         theme: "dark",
         skipTaskbar: true,
       });
-      await selectionWindow.once("tauri://created", () => {
+      await selectionWindow.once("tauri://created", async () => {
         console.log("The selection window has been created");
       });
       await selectionWindow.once("tauri://error", (e) => {
@@ -40,8 +40,8 @@ export const registerShortcut = async (shortcut: string) => {
     if (!res) {
       await register(shortcut, async () => {
         if (shortcut == shortcuts[0].name) {
-          await selectionWindow.show();
           await emit("reload-selection");
+          await selectionWindow.show();
         } else if (shortcut == shortcuts[1].name) {
           const all = await getAllWebviewWindows();
           const selectionWindow = all.find((item) => item.label == "selection");

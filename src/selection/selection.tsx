@@ -11,9 +11,11 @@ const originSize = 50; // Original image size
 const magnifierSize = 100; // Magnifying glass size
 const zoomFactor = 2; // magnification
 export default function SelectionApp() {
+  const [isShow, setIsShow] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [endPos, setEndPos] = useState({ x: 0, y: 0 });
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const selectionConRef = useRef<HTMLDivElement>(null);
   const selectionBoxRef = useRef<HTMLDivElement>(null);
   const selectionActionRef = useRef<HTMLDivElement>(null);
@@ -24,14 +26,29 @@ export default function SelectionApp() {
     const init = async () => {
       await fetchImage();
     };
-    init();
+    init().then((_r) => setIsShow(true));
   }, []);
   const fetchImage = async () => {
     // Load image from file path
     imageRef.current.src = await invoke("take_screenshot");
   };
+
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const handleMouseDown = (e: MouseEvent) => {
+      setIsSelecting(true);
+      setStartPos({ x: e.clientX, y: e.clientY });
+      setEndPos({ x: e.clientX, y: e.clientY });
+      if (selectionBoxRef.current) {
+        selectionBoxRef.current.style.boxShadow =
+          "0 0 0 9999px rgba(0, 0, 0, 0.3)";
+      }
+    };
+
+    const handleMouseMove = async (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+      if (isSelecting) {
+        setEndPos({ x: e.clientX, y: e.clientY });
+      }
       const magnifierCanvas = magnifierRef.current;
       if (magnifierCanvas && imageRef.current.complete) {
         const ctx = magnifierCanvas.getContext("2d");
@@ -62,29 +79,6 @@ export default function SelectionApp() {
       if (magnifierConRef.current) {
         magnifierConRef.current.style.left = `${e.clientX + 20}px`;
         magnifierConRef.current.style.top = `${e.clientY + 20}px`;
-      }
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleMouseDown = (e: MouseEvent) => {
-      setIsSelecting(true);
-      setStartPos({ x: e.clientX, y: e.clientY });
-      setEndPos({ x: e.clientX, y: e.clientY });
-      if (selectionBoxRef.current) {
-        selectionBoxRef.current.style.boxShadow =
-          "0 0 0 9999px rgba(0, 0, 0, 0.3)";
-      }
-    };
-
-    const handleMouseMove = async (e: MouseEvent) => {
-      if (isSelecting) {
-        setEndPos({ x: e.clientX, y: e.clientY });
       }
     };
     const handleMouseUp = (_e: MouseEvent) => {
@@ -172,45 +166,47 @@ export default function SelectionApp() {
   };
 
   return (
-    <div id="selection-container" ref={selectionConRef}>
-      <div id="selection-overlay"></div>
-      <div style={{ color: "#fff" }}>
-        <div style={{ display: "flex", gap: "5px" }}>
-          <p>start</p>
-          <p>{startPos.x}</p>
-          <p>{startPos.y}</p>
+    isShow && (
+      <div id="selection-container" ref={selectionConRef}>
+        <div id="selection-overlay"></div>
+
+        <div
+          id="selection-box"
+          style={{ border: isSelecting ? "2px solid #007bff" : "" }}
+          ref={selectionBoxRef}
+        ></div>
+
+        <div id="selection-action" ref={selectionActionRef}>
+          <button
+            id="save-btn"
+            onClick={handleSave}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            Save
+          </button>
         </div>
-        <div style={{ display: "flex", gap: "5px" }}>
-          <p>end</p>
-          <p>{endPos.x}</p>
-          <p>{endPos.y}</p>
-        </div>
-        <div id="selection-box" ref={selectionBoxRef}></div>
-      </div>
-      <div id="selection-action" ref={selectionActionRef}>
-        <button
-          id="save-btn"
-          onClick={handleSave}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          Save
-        </button>
-      </div>
-      <div id="magnifier-container" ref={magnifierConRef}>
-        <div style={{ position: "relative" }}>
-          <canvas
-            ref={magnifierRef}
-            width={magnifierSize}
-            height={magnifierSize}
-            style={{
-              border: "2px solid #fff",
-            }}
-          />
-          <div id="magnifier-line-x"></div>
-          <div id="magnifier-line-y"></div>
+        <div id="magnifier-container" ref={magnifierConRef}>
+          <div id="magnifier-canvas">
+            <canvas
+              ref={magnifierRef}
+              width={magnifierSize}
+              height={magnifierSize}
+              style={{
+                border: "2px solid #fff",
+              }}
+            />
+            <div id="magnifier-line-x"></div>
+            <div id="magnifier-line-y"></div>
+          </div>
+          <div style={{ color: "#fff" }}>
+            <div style={{ display: "flex", gap: "5px" }}>
+              <p>{mousePos.x}</p>
+              <p>{mousePos.y}</p>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    )
   );
 }
 

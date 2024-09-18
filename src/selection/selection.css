@@ -16,7 +16,6 @@ html {
 }
 #selection-box {
   position: absolute;
-  border: 2px solid #007bff;
   display: none;
 }
 #selection-action {
@@ -26,13 +25,17 @@ html {
 #magnifier-container {
   position: absolute;
   pointer-events: none;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   z-index: 9999;
+}
+#magnifier-canvas {
+  position: relative;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+
 }
 #magnifier-line-x {
   position: absolute;
-  height: 2px;
   width: 100%;
+  height: 2px;
   top: 50%;
   left: 0;
   margin-top: -1px;
@@ -40,8 +43,8 @@ html {
 }
 #magnifier-line-y {
   position: absolute;
-  height: 100%;
   width: 2px;
+  height: 100%;
   top: 0;
   left: 50%;
   margin-left: -1px;

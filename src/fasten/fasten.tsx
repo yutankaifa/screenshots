@@ -1,15 +1,20 @@
 import { createRoot } from "react-dom/client";
 import { useEffect, useRef, useState } from "react";
-import { getCurrentWindow, PhysicalPosition } from "@tauri-apps/api/window";
+import {
+  getCurrentWindow,
+  PhysicalPosition,
+  cursorPosition,
+} from "@tauri-apps/api/window";
 import "./fasten.css";
 export default function FastenApp() {
   const fastenRef = useRef<HTMLImageElement>(null);
   const [imgData, setImgData] = useState<any>();
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-
+  const [currentWindow, setCurrentWindow] = useState<any>();
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   useEffect(() => {
     const currentWindow = getCurrentWindow();
+    setCurrentWindow(currentWindow);
     console.log("currentWindow", currentWindow);
     const unlisten = currentWindow.once<ImageData>("show-image", (event) => {
       console.log("Received show-image event:", event);
@@ -22,23 +27,30 @@ export default function FastenApp() {
     };
   }, []);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  const handleMouseDown = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsDragging(true);
-    setDragStart({ x: e.clientX, y: e.clientY });
+    const cPos = await cursorPosition();
+    setDragOffset({
+      x: cPos.x - e.clientX,
+      y: cPos.y - e.clientY
+    });
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const appWindow = getCurrentWindow();
-    if (isDragging) {
-      const deltaX = e.clientX - dragStart.x;
-      const deltaY = e.clientY - dragStart.y;
-      appWindow.setPosition(
-        new PhysicalPosition(imgData.x + deltaX, imgData.y + deltaY),
-      );
-    }
+  const handleMouseMove = async (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const cPos = await cursorPosition();
+    currentWindow.setPosition(
+      new PhysicalPosition(cPos.x - dragOffset.x, cPos.y - dragOffset.y)
+    );
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsDragging(false);
   };
   return (

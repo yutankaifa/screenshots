@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { invoke } from "@tauri-apps/api/core";
 import "./selection.css";
-import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { save } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 import { writeImage } from "@tauri-apps/plugin-clipboard-manager";
@@ -163,8 +163,7 @@ export default function SelectionApp() {
             height,
             filePath,
           });
-          const webView = getCurrentWebviewWindow();
-          await webView.close();
+          await invoke("close_selection_app");
         } catch (error) {
           console.error("Screenshot failed:", error);
         }
@@ -185,19 +184,64 @@ export default function SelectionApp() {
         width,
         height,
       });
-      console.log("buffer", buffer);
-      const res = await writeImage(buffer);
-      console.log("res", res);
-      const webView = getCurrentWebviewWindow();
-      await webView.close();
+      await writeImage(buffer);
+      await invoke("close_selection_app");
+      // const webView = getCurrentWebviewWindow();
+      // await webView.close();
     } catch (error) {
       console.error("Screenshot failed:", error);
     }
   };
+  const handleFasten = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const {
+      left: originL,
+      top: originT,
+      width: originW,
+      height: originH,
+    } = getSpace();
+    const { left: x, top: y, width, height } = getSpace(ratio);
+    const base64 = await invoke("take_screenshot", {
+      x,
+      y,
+      width,
+      height,
+    });
+    const obj = {
+      x: originL,
+      y: originT,
+      width: originW,
+      height: originH,
+      base64,
+    };
+    const webview = new WebviewWindow(Date.now() + "", {
+      url: "../fasten.html",
+      x: originL,
+      y: originT,
+      width: originW,
+      height: originH,
+      decorations: false,
+      fullscreen: false,
+      resizable: false,
+      transparent: true,
+      alwaysOnTop: true,
+      visible: true,
+      shadow: false,
+    });
+    await webview.once("tauri://created", async function () {
+      console.log("创建置顶成功");
+    });
+    await webview.once("tauri://error", function (e) {
+      console.log("创建置顶错误", e);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await webview.emit("show-image", obj);
+    await invoke("close_selection_app");
+  };
   return (
     isShow && (
       <div id="selection-container" ref={selectionConRef}>
-        <div id="selection-overlay"></div>
         <div id="selection-box" ref={selectionBoxRef}>
           <div
             id="selection-area"
@@ -207,11 +251,11 @@ export default function SelectionApp() {
 
           <div id="selection-action" ref={selectionActionRef}>
             <button
-              id="save-btn btn"
-              onClick={handleSave}
+              id="fasten-btn btn"
+              onClick={handleFasten}
               onMouseDown={(e) => e.stopPropagation()}
             >
-              Save
+              Fasten
             </button>
             <button
               id="copy-btn btn"
@@ -219,6 +263,13 @@ export default function SelectionApp() {
               onMouseDown={(e) => e.stopPropagation()}
             >
               Copy
+            </button>
+            <button
+              id="save-btn btn"
+              onClick={handleSave}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              Save
             </button>
           </div>
         </div>

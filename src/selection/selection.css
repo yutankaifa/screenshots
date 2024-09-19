@@ -7,13 +7,6 @@ html {
   overflow: hidden;
   cursor: crosshair;
 }
-#selection-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
 #selection-box {
   position: absolute;
   display: none;

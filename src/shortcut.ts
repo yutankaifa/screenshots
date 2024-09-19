@@ -26,8 +26,8 @@ export const registerShortcut = async (shortcut: string) => {
         alwaysOnTop: true,
         visible: false,
         shadow: false,
-        theme: "dark",
-        skipTaskbar: true,
+        // theme: "dark",
+        // skipTaskbar: true,
       });
       await selectionWindow.once("tauri://created", async () => {
         console.log("The selection window has been created");

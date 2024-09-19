@@ -14,6 +14,7 @@ export default defineConfig(async () => ({
       input: {
         main: "index.html",
         selection: "selection.html",
+        fasten: "fasten.html",
       },
     },
   },

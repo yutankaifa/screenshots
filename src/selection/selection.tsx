@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { invoke } from "@tauri-apps/api/core";
 import "./selection.css";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { save } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
+import { writeImage } from "@tauri-apps/plugin-clipboard-manager";
 
 const ratio = window.devicePixelRatio;
 const originSize = 50; // Original image size
@@ -22,6 +23,7 @@ export default function SelectionApp() {
   const magnifierConRef = useRef<HTMLDivElement>(null);
   const magnifierRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(new Image());
+  const selectionAreaRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const init = async () => {
       await fetchImage();
@@ -38,8 +40,8 @@ export default function SelectionApp() {
       setIsSelecting(true);
       setStartPos({ x: e.clientX, y: e.clientY });
       setEndPos({ x: e.clientX, y: e.clientY });
-      if (selectionBoxRef.current) {
-        selectionBoxRef.current.style.boxShadow =
+      if (selectionAreaRef.current) {
+        selectionAreaRef.current.style.boxShadow =
           "0 0 0 9999px rgba(0, 0, 0, 0.3)";
       }
     };
@@ -85,7 +87,7 @@ export default function SelectionApp() {
       if (isSelecting) {
         setIsSelecting(false);
         if (selectionActionRef.current) {
-          selectionActionRef.current.style.display = "block";
+          selectionActionRef.current.style.display = "flex";
         }
       }
     };
@@ -105,28 +107,35 @@ export default function SelectionApp() {
     };
   }, [isSelecting]);
 
-  const getSpace = useMemo(() => {
+  const getSpace = (ratio?: number) => {
+    let _ratio = ratio ? ratio : 1;
     const left = Math.min(startPos.x, endPos.x);
     const top = Math.min(startPos.y, endPos.y);
     const width = Math.abs(endPos.x - startPos.x);
     const height = Math.abs(endPos.y - startPos.y);
-    return { left, top, width, height };
-  }, [startPos, endPos]);
+    return {
+      left: Math.round(left * _ratio),
+      top: Math.round(top * _ratio),
+      width: Math.round(width * _ratio),
+      height: Math.round(height * _ratio),
+    };
+  };
 
   useEffect(() => {
     const selectionBox = selectionBoxRef.current;
-    const { left, top, width, height } = getSpace;
-    if (selectionBox) {
+    const selectionArea = selectionAreaRef.current;
+    const { left, top, width, height } = getSpace();
+    if (selectionBox && selectionArea) {
       selectionBox.style.left = `${left}px`;
       selectionBox.style.top = `${top}px`;
-      selectionBox.style.width = `${width}px`;
-      selectionBox.style.height = `${height}px`;
-      selectionBox.style.display = "block";
+      selectionArea.style.width = `${width}px`;
+      selectionArea.style.height = `${height}px`;
+      selectionBox.style.display = "flex";
     }
-    if (selectionActionRef.current) {
-      selectionActionRef.current.style.top = endPos.y + "px";
-      selectionActionRef.current.style.left = endPos.x + "px";
-    }
+    // if (selectionActionRef.current) {
+    //   selectionActionRef.current.style.top = endPos.y + "px";
+    //   selectionActionRef.current.style.left = endPos.x + "px";
+    // }
   }, [startPos, endPos, isSelecting]);
 
   const handleSave = async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -144,16 +153,14 @@ export default function SelectionApp() {
       if (selectionConRef.current) {
         selectionConRef.current.style.display = "none";
       }
-      const { left, top, width, height } = getSpace;
-      const x = Math.round(left * ratio);
-      const y = Math.round(top * ratio);
+      const { left: x, top: y, width, height } = getSpace(ratio);
       setTimeout(async () => {
         try {
           await invoke("take_screenshot", {
             x,
             y,
-            width: Math.round(width * ratio),
-            height: Math.round(height * ratio),
+            width,
+            height,
             filePath,
           });
           const webView = getCurrentWebviewWindow();
@@ -164,26 +171,56 @@ export default function SelectionApp() {
       }, 200);
     }
   };
-
+  const handleCopy = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (selectionConRef.current) {
+      selectionConRef.current.style.display = "none";
+    }
+    const { left: x, top: y, width, height } = getSpace(ratio);
+    try {
+      const buffer: Uint8Array = await invoke("copy_screenshot", {
+        x,
+        y,
+        width,
+        height,
+      });
+      console.log("buffer", buffer);
+      const res = await writeImage(buffer);
+      console.log("res", res);
+      const webView = getCurrentWebviewWindow();
+      await webView.close();
+    } catch (error) {
+      console.error("Screenshot failed:", error);
+    }
+  };
   return (
     isShow && (
       <div id="selection-container" ref={selectionConRef}>
         <div id="selection-overlay"></div>
+        <div id="selection-box" ref={selectionBoxRef}>
+          <div
+            id="selection-area"
+            style={{ border: isSelecting ? "2px solid #007bff" : "" }}
+            ref={selectionAreaRef}
+          ></div>
 
-        <div
-          id="selection-box"
-          style={{ border: isSelecting ? "2px solid #007bff" : "" }}
-          ref={selectionBoxRef}
-        ></div>
-
-        <div id="selection-action" ref={selectionActionRef}>
-          <button
-            id="save-btn"
-            onClick={handleSave}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            Save
-          </button>
+          <div id="selection-action" ref={selectionActionRef}>
+            <button
+              id="save-btn btn"
+              onClick={handleSave}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              Save
+            </button>
+            <button
+              id="copy-btn btn"
+              onClick={handleCopy}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              Copy
+            </button>
+          </div>
         </div>
         <div id="magnifier-container" ref={magnifierConRef}>
           <div id="magnifier-canvas">

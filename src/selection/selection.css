@@ -17,10 +17,19 @@ html {
 #selection-box {
   position: absolute;
   display: none;
+  flex-direction: column;
+  align-items: flex-end;
+}
+#btn {
+  padding-block: 20px;
+  padding-inline: 30px;
+  border: 0;
+  background-color: #007bff;
+  border-radius: 20px;
 }
 #selection-action {
-  position: absolute;
   display: none;
+  gap: 20px;
 }
 #magnifier-container {
   position: absolute;

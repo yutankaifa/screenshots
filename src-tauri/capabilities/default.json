@@ -4,19 +4,20 @@
   "description": "Capability for the main window",
   "windows": ["main","selection"],
   "permissions": [
-    "core:event:default",
     "core:app:default",
+    "core:event:default",
+    "core:image:allow-from-bytes",
     "core:webview:allow-create-webview-window",
     "core:window:allow-show",
     "core:window:allow-hide",
     "core:window:allow-close",
     "core:window:allow-get-all-windows",
+    "clipboard-manager:allow-write-image",
     "dialog:default",
     "dialog:allow-save",
     "global-shortcut:allow-is-registered",
     "global-shortcut:allow-register",
     "global-shortcut:allow-unregister",
-    "global-shortcut:allow-unregister-all",
-    "shell:allow-open"
+    "global-shortcut:allow-unregister-all"
   ]
 }

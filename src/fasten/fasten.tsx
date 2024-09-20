@@ -64,7 +64,7 @@ export default function FastenApp() {
         <div id="img-box">
           <img
             src={imgData.base64}
-            style={{ width: imgData.width, height: imgData.height }}
+            style={{ width: "100%", height: "100%" }}
             alt="fasten-img"
           />
         </div>

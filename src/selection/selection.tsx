@@ -44,6 +44,9 @@ export default function SelectionApp() {
         selectionAreaRef.current.style.boxShadow =
           "0 0 0 9999px rgba(0, 0, 0, 0.3)";
       }
+      if (selectionActionRef.current) {
+        selectionActionRef.current.style.display = "none";
+      }
     };
 
     const handleMouseMove = async (e: MouseEvent) => {

@@ -15,9 +15,7 @@ export default function FastenApp() {
   useEffect(() => {
     const currentWindow = getCurrentWindow();
     setCurrentWindow(currentWindow);
-    console.log("currentWindow", currentWindow);
     const unlisten = currentWindow.once<ImageData>("show-image", (event) => {
-      console.log("Received show-image event:", event);
       setImgData(event.payload);
     });
 

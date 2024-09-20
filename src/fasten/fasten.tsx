@@ -31,10 +31,9 @@ export default function FastenApp() {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
-    const cPos = await cursorPosition();
     setDragOffset({
-      x: cPos.x - e.clientX,
-      y: cPos.y - e.clientY
+      x: e.clientX,
+      y: e.clientY,
     });
   };
 
@@ -44,7 +43,7 @@ export default function FastenApp() {
     e.stopPropagation();
     const cPos = await cursorPosition();
     currentWindow.setPosition(
-      new PhysicalPosition(cPos.x - dragOffset.x, cPos.y - dragOffset.y)
+      new PhysicalPosition(cPos.x - dragOffset.x, cPos.y - dragOffset.y),
     );
   };
 
@@ -64,11 +63,13 @@ export default function FastenApp() {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        <img
-          src={imgData.base64}
-          style={{ width: imgData.width, height: imgData.height }}
-          alt="fasten-img"
-        />
+        <div id="img-box">
+          <img
+            src={imgData.base64}
+            style={{ width: imgData.width, height: imgData.height }}
+            alt="fasten-img"
+          />
+        </div>
       </div>
     )
   );

@@ -13,10 +13,15 @@ const magnifierSize = 100; // Magnifying glass size
 const zoomFactor = 2; // magnification
 export default function SelectionApp() {
   const [isShow, setIsShow] = useState(false);
+  const [onceSelection, setOnceSelection] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [endPos, setEndPos] = useState({ x: 0, y: 0 });
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeHandle, setResizeHandle] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
   const selectionConRef = useRef<HTMLDivElement>(null);
   const selectionBoxRef = useRef<HTMLDivElement>(null);
   const selectionActionRef = useRef<HTMLDivElement>(null);
@@ -35,15 +40,30 @@ export default function SelectionApp() {
     imageRef.current.src = await invoke("take_screenshot");
   };
 
+  const handleResizeStart = (e: React.MouseEvent, handle: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setIsResizing(true);
+    setResizeHandle(handle);
+  };
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
+      if (onceSelection) {
+        if (
+          selectionAreaRef.current &&
+          selectionAreaRef.current.contains(e.target as Node)
+        ) {
+          setIsDragging(true);
+          setDragStartPos({
+            x: e.clientX - startPos.x,
+            y: e.clientY - startPos.y,
+          });
+        }
+        return;
+      }
       setIsSelecting(true);
       setStartPos({ x: e.clientX, y: e.clientY });
       setEndPos({ x: e.clientX, y: e.clientY });
-      if (selectionAreaRef.current) {
-        selectionAreaRef.current.style.boxShadow =
-          "0 0 0 9999px rgba(0, 0, 0, 0.3)";
-      }
       if (selectionActionRef.current) {
         selectionActionRef.current.style.display = "none";
       }
@@ -53,6 +73,14 @@ export default function SelectionApp() {
       setMousePos({ x: e.clientX, y: e.clientY });
       if (isSelecting) {
         setEndPos({ x: e.clientX, y: e.clientY });
+      }
+      if (isDragging) {
+        const newStartX = e.clientX - dragStartPos.x;
+        const newStartY = e.clientY - dragStartPos.y;
+        const width = endPos.x - startPos.x;
+        const height = endPos.y - startPos.y;
+        setStartPos({ x: newStartX, y: newStartY });
+        setEndPos({ x: newStartX + width, y: newStartY + height });
       }
       const magnifierCanvas = magnifierRef.current;
       if (magnifierCanvas && imageRef.current.complete) {
@@ -77,7 +105,7 @@ export default function SelectionApp() {
             0,
             0,
             magnifierSize,
-            magnifierSize,
+            magnifierSize
           );
         }
       }
@@ -87,7 +115,11 @@ export default function SelectionApp() {
       }
     };
     const handleMouseUp = (_e: MouseEvent) => {
+      if (isDragging) {
+        setIsDragging(false);
+      }
       if (isSelecting) {
+        setOnceSelection(true);
         setIsSelecting(false);
         if (selectionActionRef.current) {
           selectionActionRef.current.style.display = "flex";
@@ -95,20 +127,79 @@ export default function SelectionApp() {
       }
     };
 
+    const handleResize = (e: MouseEvent) => {
+      if (!isResizing) return;
+
+      let newStartPos = { ...startPos };
+      let newEndPos = { ...endPos };
+
+      switch (resizeHandle) {
+        case "top":
+          newStartPos.y = Math.min(e.clientY, endPos.y);
+          break;
+        case "bottom":
+          newEndPos.y = Math.max(e.clientY, startPos.y);
+          break;
+        case "left":
+          newStartPos.x = Math.min(e.clientX, endPos.x);
+          break;
+        case "right":
+          newEndPos.x = Math.max(e.clientX, startPos.x);
+          break;
+        case "top-left":
+          newStartPos = {
+            x: Math.min(e.clientX, endPos.x),
+            y: Math.min(e.clientY, endPos.y),
+          };
+          break;
+        case "top-right":
+          newStartPos.y = Math.min(e.clientY, endPos.y);
+          newEndPos.x = Math.max(e.clientX, startPos.x);
+          break;
+        case "bottom-left":
+          newStartPos.x = Math.min(e.clientX, endPos.x);
+          newEndPos.y = Math.max(e.clientY, startPos.y);
+          break;
+        case "bottom-right":
+          newEndPos = {
+            x: Math.max(e.clientX, startPos.x),
+            y: Math.max(e.clientY, startPos.y),
+          };
+          break;
+      }
+
+      setStartPos(newStartPos);
+      setEndPos(newEndPos);
+    };
+
+    const handleResizeEnd = () => {
+      setIsResizing(false);
+      setResizeHandle("");
+    };
+
     const removeAllEventListener = () => {
       window.removeEventListener("mousedown", handleMouseDown);
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("mousemove", handleResize);
+      window.removeEventListener("mouseup", handleResizeEnd);
     };
 
     window.addEventListener("mousedown", handleMouseDown);
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
+    window.addEventListener("mousemove", handleResize);
+    window.addEventListener("mouseup", handleResizeEnd);
 
     return () => {
       removeAllEventListener();
     };
-  }, [isSelecting]);
+  }, [
+    isSelecting,
+    isResizing,
+    isDragging,
+    onceSelection,
+  ]);
 
   const getSpace = (ratio?: number) => {
     let _ratio = ratio ? ratio : 1;
@@ -139,7 +230,7 @@ export default function SelectionApp() {
     //   selectionActionRef.current.style.top = endPos.y + "px";
     //   selectionActionRef.current.style.left = endPos.x + "px";
     // }
-  }, [startPos, endPos, isSelecting]);
+  }, [startPos, endPos]);
 
   const handleSave = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -242,15 +333,70 @@ export default function SelectionApp() {
     await webview.emit("show-image", obj);
     await invoke("close_selection_app");
   };
+
+  const getCursorStyle = () => {
+    if (onceSelection) {
+      return "move";
+    } else {
+      return "default";
+    }
+  };
+
   return (
     isShow && (
-      <div id="selection-container" ref={selectionConRef}>
+      <div
+        id="selection-container"
+        style={{ cursor: onceSelection ? "default" : "crosshair" }}
+        ref={selectionConRef}
+      >
         <div id="selection-box" ref={selectionBoxRef}>
-          <div
+         <div style={{position:"relative"}}>
+         <div
             id="selection-area"
-            style={{ border: isSelecting ? "2px solid #007bff" : "" }}
+            style={{
+              border: "2px solid #007bff",
+              cursor: getCursorStyle(),
+              boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.3)",
+            }}
             ref={selectionAreaRef}
-          ></div>
+          >
+            <div
+              className="resize-handle top"
+              onMouseDown={(e) => handleResizeStart(e, "top")}
+            ></div>
+            <div
+              className="resize-handle bottom"
+              onMouseDown={(e) => handleResizeStart(e, "bottom")}
+            ></div>
+            <div
+              className="resize-handle left"
+              onMouseDown={(e) => handleResizeStart(e, "left")}
+            ></div>
+            <div
+              className="resize-handle right"
+              onMouseDown={(e) => handleResizeStart(e, "right")}
+            ></div>
+            <div
+              className="resize-handle top-left"
+              onMouseDown={(e) => handleResizeStart(e, "top-left")}
+            ></div>
+            <div
+              className="resize-handle top-right"
+              onMouseDown={(e) => handleResizeStart(e, "top-right")}
+            ></div>
+            <div
+              className="resize-handle bottom-left"
+              onMouseDown={(e) =>
+                handleResizeStart(e, "bottom-left")
+              }
+            ></div>
+            <div
+              className="resize-handle bottom-right"
+              onMouseDown={(e) =>
+                handleResizeStart(e, "bottom-right")
+              }
+            ></div>
+          </div>
 
           <div id="selection-action" ref={selectionActionRef}>
             <button
@@ -275,6 +421,7 @@ export default function SelectionApp() {
               Save
             </button>
           </div>
+         </div>
         </div>
         <div id="magnifier-container" ref={magnifierConRef}>
           <div id="magnifier-canvas">

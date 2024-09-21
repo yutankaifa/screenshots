@@ -5,7 +5,6 @@ html {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  cursor: crosshair;
 }
 #selection-box {
   position: absolute;
@@ -21,8 +20,12 @@ html {
   border-radius: 20px;
 }
 #selection-action {
+  position: absolute;
+  bottom: -30px;
+  right: 0;
   display: none;
   gap: 20px;
+
 }
 #magnifier-container {
   position: absolute;
@@ -52,4 +55,23 @@ html {
   margin-left: -1px;
   background-color: #007bff;
 
+}
+.resize-handle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: #007bff;
+  border: 1px solid #fff;
+}
+
+.resize-handle.top { top: -4px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+.resize-handle.bottom { bottom: -4px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+.resize-handle.left { left: -4px; top: 50%; transform: translateY(-50%); cursor: w-resize; }
+.resize-handle.right { right: -4px; top: 50%; transform: translateY(-50%); cursor: e-resize; }
+.resize-handle.top-left { top: -4px; left: -4px; cursor: nw-resize; }
+.resize-handle.top-right { top: -4px; right: -4px; cursor: ne-resize; }
+.resize-handle.bottom-left { bottom: -4px; left: -4px; cursor: sw-resize; }
+.resize-handle.bottom-right { bottom: -4px; right: -4px; cursor: se-resize; }
+
+#selection-area {
 }

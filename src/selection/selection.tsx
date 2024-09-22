@@ -135,35 +135,35 @@ export default function SelectionApp() {
 
       switch (resizeHandle) {
         case "top":
-          newStartPos.y = Math.min(e.clientY, endPos.y);
+          newStartPos.y = e.clientY;
           break;
         case "bottom":
-          newEndPos.y = Math.max(e.clientY, startPos.y);
+          newEndPos.y = e.clientY;
           break;
         case "left":
-          newStartPos.x = Math.min(e.clientX, endPos.x);
+          newStartPos.x = e.clientX;
           break;
         case "right":
-          newEndPos.x = Math.max(e.clientX, startPos.x);
+          newEndPos.x = e.clientX;
           break;
         case "top-left":
           newStartPos = {
-            x: Math.min(e.clientX, endPos.x),
-            y: Math.min(e.clientY, endPos.y),
+            x: e.clientX,
+            y: e.clientY,
           };
           break;
         case "top-right":
-          newStartPos.y = Math.min(e.clientY, endPos.y);
-          newEndPos.x = Math.max(e.clientX, startPos.x);
+          newStartPos.y = e.clientY;
+          newEndPos.x = e.clientX;
           break;
         case "bottom-left":
-          newStartPos.x = Math.min(e.clientX, endPos.x);
-          newEndPos.y = Math.max(e.clientY, startPos.y);
+          newStartPos.x = e.clientX;
+          newEndPos.y = e.clientY;
           break;
         case "bottom-right":
           newEndPos = {
-            x: Math.max(e.clientX, startPos.x),
-            y: Math.max(e.clientY, startPos.y),
+            x: e.clientX,
+            y: e.clientY,
           };
           break;
       }

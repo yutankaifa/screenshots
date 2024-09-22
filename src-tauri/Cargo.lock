@@ -3400,6 +3400,7 @@ name = "screenshots"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
+ "lazy_static",
  "screenshots 0.8.10",
  "serde",
  "serde_json",

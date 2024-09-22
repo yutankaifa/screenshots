@@ -37,7 +37,13 @@ export default function SelectionApp() {
   }, []);
   const fetchImage = async () => {
     // Load image from file path
-    imageRef.current.src = await invoke("take_screenshot");
+    imageRef.current.src = await invoke("take_screenshot", {
+      x: 0,
+      y: 0,
+      width: screen.width,
+      height: screen.height,
+      actionType: "Init",
+    });
   };
 
   const handleResizeStart = (e: React.MouseEvent, handle: string) => {
@@ -74,15 +80,29 @@ export default function SelectionApp() {
       if (isSelecting) {
         setEndPos({ x: e.clientX, y: e.clientY });
       }
+
       if (isDragging) {
-        const newStartX = e.clientX - dragStartPos.x;
-        const newStartY = e.clientY - dragStartPos.y;
+        const newStartX = Math.max(0, e.clientX - dragStartPos.x);
+        const newStartY = Math.max(0, e.clientY - dragStartPos.y);
         const width = endPos.x - startPos.x;
         const height = endPos.y - startPos.y;
-        setStartPos({ x: newStartX, y: newStartY });
-        setEndPos({ x: newStartX + width, y: newStartY + height });
+
+        // 限制选中区域不超出窗口边界
+        const maxX = window.innerWidth - width;
+        const maxY = window.innerHeight - height;
+
+        setStartPos({
+          x: Math.min(newStartX, maxX),
+          y: Math.min(newStartY, maxY),
+        });
+        setEndPos({
+          x: Math.min(newStartX + width, maxX + width),
+          y: Math.min(newStartY + height, maxY + height),
+        });
+        return;
       }
       const magnifierCanvas = magnifierRef.current;
+
       if (magnifierCanvas && imageRef.current.complete) {
         const ctx = magnifierCanvas.getContext("2d");
         if (ctx) {
@@ -105,7 +125,7 @@ export default function SelectionApp() {
             0,
             0,
             magnifierSize,
-            magnifierSize
+            magnifierSize,
           );
         }
       }
@@ -194,12 +214,7 @@ export default function SelectionApp() {
     return () => {
       removeAllEventListener();
     };
-  }, [
-    isSelecting,
-    isResizing,
-    isDragging,
-    onceSelection,
-  ]);
+  }, [isSelecting, isResizing, isDragging, onceSelection]);
 
   const getSpace = (ratio?: number) => {
     let _ratio = ratio ? ratio : 1;
@@ -255,6 +270,7 @@ export default function SelectionApp() {
             y,
             width,
             height,
+            actionType: "Save",
             filePath,
           });
           await invoke("close_selection_app");
@@ -267,9 +283,6 @@ export default function SelectionApp() {
   const handleCopy = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (selectionConRef.current) {
-      selectionConRef.current.style.display = "none";
-    }
     const { left: x, top: y, width, height } = getSpace(ratio);
     try {
       const buffer: Uint8Array = await invoke("copy_screenshot", {
@@ -289,6 +302,8 @@ export default function SelectionApp() {
   const handleFasten = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    if (selectionAreaRef.current)
+      selectionAreaRef.current.style.display = "none";
     const {
       left: originL,
       top: originT,
@@ -301,6 +316,7 @@ export default function SelectionApp() {
       y,
       width,
       height,
+      actionType: "Fasten",
     });
     const obj = {
       x: originL,
@@ -313,8 +329,8 @@ export default function SelectionApp() {
       url: "../fasten.html",
       x: originL,
       y: originT,
-      width: originW + 10,
-      height: originH + 10,
+      width: originW + 20,
+      height: originH + 20,
       decorations: false,
       fullscreen: false,
       resizable: false,
@@ -350,99 +366,97 @@ export default function SelectionApp() {
         ref={selectionConRef}
       >
         <div id="selection-box" ref={selectionBoxRef}>
-         <div style={{position:"relative"}}>
-         <div
-            id="selection-area"
-            style={{
-              border: "2px solid #007bff",
-              cursor: getCursorStyle(),
-              boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.3)",
-            }}
-            ref={selectionAreaRef}
-          >
+          <div style={{ position: "relative" }}>
             <div
-              className="resize-handle top"
-              onMouseDown={(e) => handleResizeStart(e, "top")}
-            ></div>
-            <div
-              className="resize-handle bottom"
-              onMouseDown={(e) => handleResizeStart(e, "bottom")}
-            ></div>
-            <div
-              className="resize-handle left"
-              onMouseDown={(e) => handleResizeStart(e, "left")}
-            ></div>
-            <div
-              className="resize-handle right"
-              onMouseDown={(e) => handleResizeStart(e, "right")}
-            ></div>
-            <div
-              className="resize-handle top-left"
-              onMouseDown={(e) => handleResizeStart(e, "top-left")}
-            ></div>
-            <div
-              className="resize-handle top-right"
-              onMouseDown={(e) => handleResizeStart(e, "top-right")}
-            ></div>
-            <div
-              className="resize-handle bottom-left"
-              onMouseDown={(e) =>
-                handleResizeStart(e, "bottom-left")
-              }
-            ></div>
-            <div
-              className="resize-handle bottom-right"
-              onMouseDown={(e) =>
-                handleResizeStart(e, "bottom-right")
-              }
-            ></div>
-          </div>
-
-          <div id="selection-action" ref={selectionActionRef}>
-            <button
-              id="fasten-btn btn"
-              onClick={handleFasten}
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              Fasten
-            </button>
-            <button
-              id="copy-btn btn"
-              onClick={handleCopy}
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              Copy
-            </button>
-            <button
-              id="save-btn btn"
-              onClick={handleSave}
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              Save
-            </button>
-          </div>
-         </div>
-        </div>
-        <div id="magnifier-container" ref={magnifierConRef}>
-          <div id="magnifier-canvas">
-            <canvas
-              ref={magnifierRef}
-              width={magnifierSize}
-              height={magnifierSize}
+              id="selection-area"
               style={{
-                border: "2px solid #fff",
+                border: "2px solid #007bff",
+                cursor: getCursorStyle(),
+                boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.3)",
               }}
-            />
-            <div id="magnifier-line-x"></div>
-            <div id="magnifier-line-y"></div>
-          </div>
-          <div style={{ color: "#fff" }}>
-            <div style={{ display: "flex", gap: "5px" }}>
-              <p>{mousePos.x}</p>
-              <p>{mousePos.y}</p>
+              ref={selectionAreaRef}
+            >
+              <div
+                className="resize-handle top"
+                onMouseDown={(e) => handleResizeStart(e, "top")}
+              ></div>
+              <div
+                className="resize-handle bottom"
+                onMouseDown={(e) => handleResizeStart(e, "bottom")}
+              ></div>
+              <div
+                className="resize-handle left"
+                onMouseDown={(e) => handleResizeStart(e, "left")}
+              ></div>
+              <div
+                className="resize-handle right"
+                onMouseDown={(e) => handleResizeStart(e, "right")}
+              ></div>
+              <div
+                className="resize-handle top-left"
+                onMouseDown={(e) => handleResizeStart(e, "top-left")}
+              ></div>
+              <div
+                className="resize-handle top-right"
+                onMouseDown={(e) => handleResizeStart(e, "top-right")}
+              ></div>
+              <div
+                className="resize-handle bottom-left"
+                onMouseDown={(e) => handleResizeStart(e, "bottom-left")}
+              ></div>
+              <div
+                className="resize-handle bottom-right"
+                onMouseDown={(e) => handleResizeStart(e, "bottom-right")}
+              ></div>
+            </div>
+
+            <div id="selection-action" ref={selectionActionRef}>
+              <button
+                id="fasten-btn btn"
+                onClick={handleFasten}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                Fasten
+              </button>
+              <button
+                id="copy-btn btn"
+                onClick={handleCopy}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                Copy
+              </button>
+              <button
+                id="save-btn btn"
+                onClick={handleSave}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                Save
+              </button>
             </div>
           </div>
         </div>
+        {!isDragging && (
+          <div id="magnifier-container" ref={magnifierConRef}>
+            <div id="magnifier-canvas">
+              <canvas
+                ref={magnifierRef}
+                width={magnifierSize}
+                height={magnifierSize}
+                style={{
+                  border: "2px solid #fff",
+                }}
+              />
+              <div id="magnifier-line-x"></div>
+              <div id="magnifier-line-y"></div>
+            </div>
+            <div style={{ color: "#fff" }}>
+              <div style={{ display: "flex", gap: "5px" }}>
+                <p>{mousePos.x}</p>
+                <p>{mousePos.y}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   );

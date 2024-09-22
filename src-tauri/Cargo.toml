@@ -24,5 +24,6 @@ tauri-plugin-dialog = "2.0.0-rc"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 screenshots = "0.8.10"
+lazy_static = "1.5"
 
 

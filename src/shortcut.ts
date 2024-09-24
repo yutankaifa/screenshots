@@ -20,14 +20,16 @@ export const registerShortcut = async (shortcut: string) => {
       selectionWindow = new WebviewWindow("selection", {
         url: "../selection.html",
         decorations: false,
-        fullscreen: true,
-        resizable: false,
+        fullscreen: false,
+        resizable: true,
         transparent: true,
         alwaysOnTop: true,
         visible: false,
         shadow: false,
-        // theme: "dark",
-        // skipTaskbar: true,
+        width: screen.width, // 设置窗口宽度为主显示器宽度
+        height: screen.height, // 设置窗口高度为主显示器高度
+        x: 0, // 设置窗口位置为主显示器的左上角
+        y: 0,
       });
       await selectionWindow.once("tauri://created", async () => {
         console.log("The selection window has been created");

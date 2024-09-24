@@ -76,14 +76,16 @@ export default function SelectionApp() {
     };
 
     const handleMouseMove = async (e: MouseEvent) => {
-      setMousePos({ x: e.clientX, y: e.clientY });
+      const mouseX = e.screenX; // 使用 screenX 获取全局鼠标位置
+      const mouseY = e.screenY; // 使用 screenY 获取全局鼠标位置
+      setMousePos({ x: mouseX, y: mouseY });
       if (isSelecting) {
-        setEndPos({ x: e.clientX, y: e.clientY });
+        setEndPos({ x: mouseX, y: mouseY });
       }
 
       if (isDragging) {
-        const newStartX = Math.max(0, e.clientX - dragStartPos.x);
-        const newStartY = Math.max(0, e.clientY - dragStartPos.y);
+        const newStartX = Math.max(0, mouseX - dragStartPos.x);
+        const newStartY = Math.max(0, mouseY - dragStartPos.y);
         const width = endPos.x - startPos.x;
         const height = endPos.y - startPos.y;
 

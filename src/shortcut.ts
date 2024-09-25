@@ -21,7 +21,7 @@ export const registerShortcut = async (shortcut: string) => {
         url: "../selection.html",
         decorations: false,
         fullscreen: false,
-        resizable: true,
+        resizable: false,
         transparent: true,
         alwaysOnTop: true,
         visible: false,

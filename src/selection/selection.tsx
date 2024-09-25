@@ -51,8 +51,6 @@ export default function SelectionApp() {
     imageRef.current.src = await invoke("take_screenshot", {
       x: 0,
       y: 0,
-      width: screen.width,
-      height: screen.height,
       actionType: "Init",
     });
   };

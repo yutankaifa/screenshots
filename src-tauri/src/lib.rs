@@ -74,16 +74,22 @@ fn get_or_cache_screen_image(action_type: &ActionType) -> Result<ImageBuffer<Rgb
 }
 
 // 根据指定区域截图
-fn capture_screenshot_from_cache(x: i32, y: i32, width: u32, height: u32, action_type: &ActionType) -> Result<Vec<u8>, String> {
+fn capture_screenshot_from_cache(x: i32, y: i32, width: Option<u32>, height: Option<u32>, action_type: &ActionType) -> Result<Vec<u8>, String> {
     let screen_image = get_or_cache_screen_image(action_type)?; // 获取或缓存的屏幕图像
-
-    // 裁剪指定区域
-    let cropped_image = screen_image.view(x as u32, y as u32, width, height).to_image();
-
+    let cropped_image ;
     let mut png_data = Vec::new();
     let encoder = PngEncoder::new(&mut png_data);
+    let w = width.unwrap_or(screen_image.width());
+    let h = height.unwrap_or(screen_image.height());
+    if action_type == &ActionType::Init {
+        cropped_image = screen_image
+    }
+    // 裁剪指定区域
+    else {
+        cropped_image = screen_image.view(x as u32, y as u32, w, h).to_image();
+    }
     encoder
-        .encode(&cropped_image, width, height, ColorType::Rgba8)
+        .encode(&cropped_image, w, h, ColorType::Rgba8)
         .map_err(|e| e.to_string())?;
 
     Ok(png_data)
@@ -93,8 +99,8 @@ fn capture_screenshot_from_cache(x: i32, y: i32, width: u32, height: u32, action
 fn take_screenshot(
     x: i32,
     y: i32,
-    width: u32,
-    height: u32,
+    width: Option<u32>,
+    height: Option<u32>,
     action_type: ActionType,
     file_path: Option<String>,
 ) -> Result<String, String> {
@@ -114,7 +120,7 @@ fn take_screenshot(
 }
 
 #[tauri::command]
-fn copy_screenshot(x: i32, y: i32, width: u32, height: u32) -> Result<Vec<u8>, String> {
+fn copy_screenshot(x: i32, y: i32, width: Option<u32>, height: Option<u32>) -> Result<Vec<u8>, String> {
     // 使用 Fasten 类型获取截图，不更新 screen
     let screenshot_data = capture_screenshot_from_cache(x, y, width, height, &ActionType::Copy)?;
     Ok(screenshot_data)

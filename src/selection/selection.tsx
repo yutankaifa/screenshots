@@ -42,7 +42,7 @@ export default function SelectionApp() {
         const logic_x = Math.round(res.x / ratio);
         const logic_y = Math.round(res.y / ratio);
         handleCanvas(logic_x, logic_y);
-        setMousePos({ x: logic_x, y: logic_y });
+        setMousePos({ x: res.x, y: res.y });
       });
     });
   }, []);
@@ -87,7 +87,7 @@ export default function SelectionApp() {
     const handleMouseMove = async (e: MouseEvent) => {
       const mouseX = e.screenX; // 使用 screenX 获取全局鼠标位置
       const mouseY = e.screenY; // 使用 screenY 获取全局鼠标位置
-      setMousePos({ x: mouseX, y: mouseY });
+      setMousePos({ x: mouseX * ratio, y: mouseY * ratio });
       if (isSelecting) {
         setEndPos({ x: mouseX, y: mouseY });
       }

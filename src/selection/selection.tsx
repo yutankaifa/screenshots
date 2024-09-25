@@ -87,7 +87,10 @@ export default function SelectionApp() {
     const handleMouseMove = async (e: MouseEvent) => {
       const mouseX = e.screenX; // 使用 screenX 获取全局鼠标位置
       const mouseY = e.screenY; // 使用 screenY 获取全局鼠标位置
-      setMousePos({ x: mouseX * ratio, y: mouseY * ratio });
+      setMousePos({
+        x: Math.round(mouseX * ratio),
+        y: Math.round(mouseY * ratio),
+      });
       if (isSelecting) {
         setEndPos({ x: mouseX, y: mouseY });
       }
@@ -230,8 +233,17 @@ export default function SelectionApp() {
       }
     }
     if (magnifierConRef.current) {
-      magnifierConRef.current.style.left = `${x + 20}px`;
-      magnifierConRef.current.style.top = `${y + 20}px`;
+      const magnifierCon = magnifierConRef.current;
+      const width = magnifierCon.clientWidth;
+      // const width = 100;
+      const height = magnifierCon.clientHeight;
+      const num = 20;
+      if (x + width + num > screen.width)
+        magnifierCon.style.left = `${x - width - num}px`;
+      else magnifierCon.style.left = `${x + num}px`;
+      if (y + height + num > screen.height)
+        magnifierCon.style.top = `${y - height - num}px`;
+      else magnifierCon.style.top = `${y + num}px`;
     }
   };
   const getSpace = (ratio?: number) => {

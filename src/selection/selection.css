@@ -33,9 +33,11 @@ html {
   z-index: 9999;
 }
 #magnifier-canvas {
+  width: 100px;
+  height: 100px;
   position: relative;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-
+  box-sizing: border-box;
 }
 #magnifier-line-x {
   position: absolute;

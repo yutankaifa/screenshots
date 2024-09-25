@@ -26,9 +26,9 @@ export const registerShortcut = async (shortcut: string) => {
         alwaysOnTop: true,
         visible: false,
         shadow: false,
-        width: screen.width, // 设置窗口宽度为主显示器宽度
-        height: screen.height, // 设置窗口高度为主显示器高度
-        x: 0, // 设置窗口位置为主显示器的左上角
+        width: screen.width,
+        height: screen.height,
+        x: 0,
         y: 0,
       });
       await selectionWindow.once("tauri://created", async () => {

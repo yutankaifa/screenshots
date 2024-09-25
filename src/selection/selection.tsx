@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { invoke } from "@tauri-apps/api/core";
-import "./selection.css";
+import { cursorPosition } from "@tauri-apps/api/window";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { save } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 import { writeImage } from "@tauri-apps/plugin-clipboard-manager";
+import "./selection.css";
+import * as React from "react";
 
 const ratio = window.devicePixelRatio;
 const originSize = 50; // Original image size
@@ -33,7 +35,16 @@ export default function SelectionApp() {
     const init = async () => {
       await fetchImage();
     };
-    init().then((_r) => setIsShow(true));
+    init().then(async (_r) => {
+      const res = await cursorPosition();
+      setIsShow(true);
+      setTimeout(() => {
+        const logic_x = Math.round(res.x / ratio);
+        const logic_y = Math.round(res.y / ratio);
+        handleCanvas(logic_x, logic_y);
+        setMousePos({ x: logic_x, y: logic_y });
+      });
+    });
   }, []);
   const fetchImage = async () => {
     // Load image from file path
@@ -103,39 +114,13 @@ export default function SelectionApp() {
         });
         return;
       }
-      const magnifierCanvas = magnifierRef.current;
-
-      if (magnifierCanvas && imageRef.current.complete) {
-        const ctx = magnifierCanvas.getContext("2d");
-        if (ctx) {
-          ctx.clearRect(0, 0, magnifierSize, magnifierSize);
-          // Calculate the actual mouse position (considering device pixel ratio)
-          const mouseX = e.clientX * ratio;
-          const mouseY = e.clientY * ratio;
-          // Calculate the capture area of the source image
-          const sourceX = mouseX - originSize / zoomFactor / 2;
-          const sourceY = mouseY - originSize / zoomFactor / 2;
-          const sourceWidth = originSize / zoomFactor;
-          const sourceHeight = originSize / zoomFactor;
-          // Draw a screenshot to the magnifying glass
-          ctx.drawImage(
-            imageRef.current,
-            sourceX,
-            sourceY,
-            sourceWidth,
-            sourceHeight,
-            0,
-            0,
-            magnifierSize,
-            magnifierSize,
-          );
-        }
-      }
-      if (magnifierConRef.current) {
-        magnifierConRef.current.style.left = `${e.clientX + 20}px`;
-        magnifierConRef.current.style.top = `${e.clientY + 20}px`;
-      }
+      handleCanvas(e.clientX, e.clientY);
     };
+    /**
+     * x,y 为逻辑大小
+     * @param _e
+     */
+
     const handleMouseUp = (_e: MouseEvent) => {
       if (isDragging) {
         setIsDragging(false);
@@ -217,7 +202,40 @@ export default function SelectionApp() {
       removeAllEventListener();
     };
   }, [isSelecting, isResizing, isDragging, onceSelection]);
+  const handleCanvas = (x = 0, y = 0) => {
+    const magnifierCanvas = magnifierRef.current;
 
+    if (magnifierCanvas && imageRef.current.complete) {
+      const ctx = magnifierCanvas.getContext("2d");
+      if (ctx) {
+        ctx.clearRect(0, 0, magnifierSize, magnifierSize);
+        // Calculate the actual mouse position (considering device pixel ratio)
+        const mouseX = x * ratio;
+        const mouseY = y * ratio;
+        // Calculate the capture area of the source image
+        const sourceX = mouseX - originSize / zoomFactor / 2;
+        const sourceY = mouseY - originSize / zoomFactor / 2;
+        const sourceWidth = originSize / zoomFactor;
+        const sourceHeight = originSize / zoomFactor;
+        // Draw a screenshot to the magnifying glass
+        ctx.drawImage(
+          imageRef.current,
+          sourceX,
+          sourceY,
+          sourceWidth,
+          sourceHeight,
+          0,
+          0,
+          magnifierSize,
+          magnifierSize,
+        );
+      }
+    }
+    if (magnifierConRef.current) {
+      magnifierConRef.current.style.left = `${x + 20}px`;
+      magnifierConRef.current.style.top = `${y + 20}px`;
+    }
+  };
   const getSpace = (ratio?: number) => {
     let _ratio = ratio ? ratio : 1;
     const left = Math.min(startPos.x, endPos.x);
